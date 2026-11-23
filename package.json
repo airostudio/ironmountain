@@ -1,0 +1,60 @@
+{
+  "name": "ironmountain",
+  "version": "0.1.0",
+  "description": "Agentic change-safety gate for AI-generated code. Reviews every diff from Claude, Copilot, Cursor, Codex, Gemini and humans before it ships.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "ironmountain": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "action.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "selfcheck": "tsx src/cli.ts scan src --offline",
+    "docs:rules": "tsx scripts/rules-table.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.13.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  },
+  "keywords": [
+    "security",
+    "code-review",
+    "ai",
+    "llm",
+    "claude",
+    "copilot",
+    "cursor",
+    "sast",
+    "supply-chain",
+    "mcp",
+    "github-action",
+    "prompt-injection"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/airostudio/ironmountain.git"
+  },
+  "homepage": "https://github.com/airostudio/ironmountain#readme"
+}

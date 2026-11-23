@@ -1,0 +1,83 @@
+name: Iron Mountain
+description: Agentic change-safety gate that reviews every pull request, especially AI-generated ones, before it merges.
+author: airostudio
+branding:
+  icon: shield
+  color: gray-dark
+
+inputs:
+  anthropic-api-key:
+    description: Anthropic API key for the agentic Claude reviewer. Without it, only the static engine runs.
+    required: false
+  github-token:
+    description: Token used to post the summary comment, inline review and check run.
+    default: ${{ github.token }}
+  fail-on:
+    description: Override the blocking severity (critical | high | medium | low | info).
+    required: false
+  agent:
+    description: '"auto" (use the AI reviewer when a key is present), "true", or "false".'
+    default: auto
+  upload-sarif:
+    description: Upload results to GitHub code scanning.
+    default: "true"
+
+outputs:
+  verdict:
+    description: pass | warn | block
+    value: ${{ steps.review.outputs.verdict }}
+  risk-score:
+    description: 0-100
+    value: ${{ steps.review.outputs.risk-score }}
+  ai-authored:
+    description: Whether the change was attributed to an AI coding agent.
+    value: ${{ steps.review.outputs.ai-authored }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Build Iron Mountain
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --no-audit --no-fund --ignore-scripts && npm run build
+
+    - name: Review
+      id: review
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        IM_FAIL_ON: ${{ inputs.fail-on }}
+        IM_AGENT: ${{ inputs.agent }}
+        IM_CLI: ${{ github.action_path }}/dist/cli.js
+      run: |
+        args=(ci --sarif ironmountain.sarif)
+        [ -n "$IM_FAIL_ON" ] && args+=(--fail-on "$IM_FAIL_ON")
+        [ "$IM_AGENT" = "true" ] && args+=(--agent)
+        [ "$IM_AGENT" = "false" ] && args+=(--no-agent)
+        set +e
+        node "$IM_CLI" "${args[@]}"
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - name: Upload SARIF
+      if: ${{ always() && inputs.upload-sarif == 'true' && hashFiles('ironmountain.sarif') != '' }}
+      uses: github/codeql-action/upload-sarif@v3
+      # ironmountain-ignore[ai/test-disabled]: SARIF upload is best-effort (code scanning may be off); the gate is enforced in the next step.
+      continue-on-error: true
+      with:
+        sarif_file: ironmountain.sarif
+        category: ironmountain
+
+    - name: Enforce gate
+      shell: bash
+      env:
+        CODE: ${{ steps.review.outputs.exit-code }}
+      run: |
+        if [ "$CODE" = "1" ]; then echo "::error::Iron Mountain blocked this change. See the PR summary comment."; exit 1; fi
+        if [ "$CODE" != "0" ]; then echo "::error::Iron Mountain failed to run (exit $CODE)."; exit "$CODE"; fi

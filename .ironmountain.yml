@@ -1,0 +1,22 @@
+# Iron Mountain policy for this repository (it reviews itself in CI).
+failOn: high
+warnOn: medium
+ai:
+  failOn: medium
+  warnOn: low
+  requireSuppressionReason: true
+
+ignore:
+  - path: "src/rules/**"
+    reason: Rule definitions necessarily contain the patterns they detect.
+  - path: "test/**"
+    reason: Test fixtures are intentionally vulnerable samples.
+  - rule: ai/prompt-injection
+    path: src/agent/reviewer.ts
+    reason: The reviewer system prompt quotes injection phrases to warn the model about them.
+
+agent:
+  instructions: |
+    Iron Mountain is itself a security gate. Pay particular attention to anything that could let
+    reviewed (untrusted) content influence the verdict: prompt injection into the agent, path
+    traversal in agent tools, webhook signature checks, and policy bypasses in suppressions.
