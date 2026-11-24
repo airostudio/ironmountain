@@ -68,14 +68,16 @@ Code under review is untrusted, and so is an LLM that reads it. The design accou
 
 ## Quick start
 
-> The npm package isn't published yet. Until it is, build from source. Before you publish, reserve the `ironmountain` name on npm, so nobody can squat it in the meantime.
+Requires Node.js 20 or newer.
 
 ```bash
-git clone https://github.com/airostudio/ironmountain && cd ironmountain
+npm install -g ironmountain
 ```
 
+Or per project, as a dev dependency (then run it with `npx ironmountain …`):
+
 ```bash
-npm ci && npm run build && npm link
+npm install --save-dev ironmountain
 ```
 
 Then, inside any repository:
@@ -100,6 +102,16 @@ ironmountain init --claude --git-hooks --github-action
 
 Exit codes: `0` pass/warn · `1` blocked · `2` error.
 
+To work on Iron Mountain itself, build from source:
+
+```bash
+git clone https://github.com/airostudio/ironmountain && cd ironmountain
+```
+
+```bash
+npm ci && npm run build && npm link
+```
+
 ## Use it from every AI coding tool
 
 ### Claude Code: real-time feedback loop
@@ -120,7 +132,7 @@ Exit codes: `0` pass/warn · `1` blocked · `2` error.
 | `scan_code` | Scan a snippet or file before or after writing it |
 | `list_rules` | Browse rules and remediation guidance |
 
-Each tool takes an optional `agent` name (`"cursor"`, `"codex"`, …), which applies the AI policy. Example configurations, using the path printed by `which ironmountain`:
+Each tool takes an optional `agent` name (`"cursor"`, `"codex"`, …), which applies the AI policy. Example configurations, assuming a global install (otherwise use the full path printed by `which ironmountain`):
 
 ```jsonc
 // Claude Desktop (claude_desktop_config.json), Cursor (.cursor/mcp.json), Windsurf, Gemini CLI (.gemini/settings.json)

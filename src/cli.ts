@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { DEFAULT_CONFIG_YAML, loadConfig, type Config } from "./config.js";
@@ -10,6 +10,7 @@ import { claudeCodeHookSettings, runEditHook, type HookPayload } from "./hooks/c
 import { FORMATS, render, type Format } from "./report/index.js";
 import { toSarif } from "./report/sarif.js";
 import { ALL_RULES } from "./rules/index.js";
+import { isInside } from "./repo.js";
 import { reviewDiffText, reviewLocal, scanPaths } from "./run.js";
 import { SEVERITIES, type Report, type Severity } from "./types.js";
 import { VERSION } from "./version.js";
@@ -234,8 +235,11 @@ async function cmdHook(argv: string[]) {
  * package name were ever squatted, every hook run would execute someone else's code.
  */
 function selfCommand(): { cmd: string; args: string[] } {
-  const script = resolve(process.argv[1] ?? "");
-  if (/[\\/]node_modules[\\/]/.test(script) || /[\\/]\.bin[\\/]/.test(script)) return { cmd: "npx", args: ["--no-install", "ironmountain"] };
+  const script = realpathSync(resolve(process.argv[1] ?? ""));
+  // Project dev dependency: portable across machines, resolves to the locked local copy.
+  if (isInside(join(realpathSync(process.cwd()), "node_modules"), script)) return { cmd: "npx", args: ["--no-install", "ironmountain"] };
+  // Global install: the binary is on PATH (npx does not look at global packages).
+  if (/[\\/]node_modules[\\/]ironmountain[\\/]/.test(script)) return { cmd: "ironmountain", args: [] };
   if (script.endsWith(".ts")) return { cmd: "npx", args: ["--no-install", "tsx", script] };
   return { cmd: "node", args: [script] };
 }
@@ -366,5 +370,11 @@ async function main() {
       die(`unknown command "${cmd}". Run "ironmountain --help".`);
   }
 }
+
+// Exit quietly when the reader goes away (e.g. `ironmountain rules | head`).
+process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EPIPE") process.exit(process.exitCode ?? 0);
+  throw err;
+});
 
 main().catch((err) => die((err as Error).stack ?? String(err)));
