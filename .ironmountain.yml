@@ -11,6 +11,8 @@ ignore:
     reason: Rule definitions necessarily contain the patterns they detect.
   - path: "test/**"
     reason: Test fixtures are intentionally vulnerable samples.
+  - path: "public/examples.js"
+    reason: Deliberately vulnerable sample snippets shown in the website playground; never executed.
   - rule: ai/prompt-injection
     path: src/agent/reviewer.ts
     reason: The reviewer system prompt quotes injection phrases to warn the model about them.

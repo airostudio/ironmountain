@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iron Mountain</title>
+<meta name="description" content="An agentic change-safety gate for code written by AI. Reviews every change from Claude, Copilot, Cursor, Codex and Gemini before it ships.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M2 27 12 9l5 8 4-5 9 15z' fill='%2364748b'/%3E%3Cpath d='M12 9l3.2 5.1L12 13l-2.6 1.6z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/" aria-label="Iron Mountain home">
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M2 27 12 9l5 8 4-5 9 15z" fill="currentColor"/><path d="M12 9l3.2 5.1L12 13l-2.6 1.6z" fill="var(--bg)"/></svg>
+    Iron Mountain
+  </a>
+  <nav>
+    <a href="#playground">Playground</a>
+    <a href="#catches">What it catches</a>
+    <a href="#everywhere">Integrations</a>
+    <a href="https://github.com/airostudio/ironmountain">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow">Change-safety gate for AI-generated code</p>
+    <h1>Every AI-written change reviewed before it ships.</h1>
+    <p class="lede">Iron Mountain reviews diffs from Claude Code, Copilot, Cursor, Codex, Gemini and people. It blocks the ones that remove auth checks, invent packages, leak secrets or plant instructions for the next agent.</p>
+    <div class="cta">
+      <a class="btn primary" href="#playground">Try it on your code</a>
+      <div class="install">
+        <code id="install-cmd">npm install -g ironmountain</code>
+        <button class="copy" data-copy="install-cmd" type="button">Copy</button>
+      </div>
+    </div>
+    <p class="note">npm release pending. Until then, build from <a href="https://github.com/airostudio/ironmountain">GitHub</a>.</p>
+  </section>
+
+  <section id="playground" class="playground">
+    <div class="section-head">
+      <h2>Playground</h2>
+      <p>Paste code, pick a filename so language rules apply, and scan. This runs the real static engine (75 rules). The deeper Claude reviewer runs in your CI or editor.</p>
+    </div>
+    <div class="pg-grid">
+      <form id="scan-form" class="pg-input" autocomplete="off">
+        <div class="row">
+          <label>Example
+            <select id="example">
+              <option value="">Your own code</option>
+            </select>
+          </label>
+          <label>Filename
+            <input id="filename" value="src/routes/users.js" maxlength="200" spellcheck="false">
+          </label>
+        </div>
+        <textarea id="code" wrap="off" spellcheck="false" aria-label="Code to scan" placeholder="Paste code here…"></textarea>
+        <div class="row actions">
+          <label class="check"><input type="checkbox" id="ai" checked> Written by an AI agent (stricter gate)</label>
+          <button class="btn primary" type="submit" id="scan-btn">Scan</button>
+        </div>
+      </form>
+      <div class="pg-output" aria-live="polite">
+        <div id="result-empty" class="empty">
+          <p>Results appear here.</p>
+          <p class="muted">Try the <b>AI-written Express route</b> example to see a blocked change.</p>
+        </div>
+        <div id="result" hidden>
+          <div class="verdict-bar">
+            <span id="verdict" class="verdict"></span>
+            <span id="risk" class="risk"></span>
+            <span id="meta" class="muted"></span>
+          </div>
+          <p id="gate" class="muted small"></p>
+          <ol id="findings" class="findings"></ol>
+        </div>
+        <p id="error" class="error" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="catches">
+    <div class="section-head">
+      <h2>Built for the ways AI agents break things</h2>
+      <p>Linters look for bad code. Iron Mountain also looks at what a change takes away.</p>
+    </div>
+    <div class="cards">
+      <article><h3>Removed and stubbed security</h3><p>A deleted <code>requireAuth</code> that never came back, or <code>isAdmin()</code> that now just returns <code>true</code>.</p></article>
+      <article><h3>Hallucinated packages</h3><p>New dependencies are checked live on npm and PyPI. Missing, days-old, typosquatted and known-malicious names are flagged.</p></article>
+      <article><h3>Prompt injection and hidden text</h3><p>Instructions aimed at AI reviewers, and invisible bidi and zero-width characters (Trojan Source).</p></article>
+      <article><h3>Agent config tampering</h3><p>Edits to CLAUDE.md, AGENTS.md, .cursorrules, MCP server lists, or settings like <code>bypassPermissions</code>.</p></article>
+      <article><h3>Tests made to pass</h3><p>Skipped, focused or deleted tests, and assertions removed on net.</p></article>
+      <article><h3>The classics</h3><p>Secrets, SQL and command injection, SSRF, XSS, weak crypto, disabled TLS, risky CI workflows, public cloud resources.</p></article>
+    </div>
+  </section>
+
+  <section id="everywhere">
+    <div class="section-head">
+      <h2>Runs wherever the code is written</h2>
+    </div>
+    <div class="integrations">
+      <div><h3>Claude Code</h3><p>A hook scans each file as Claude writes it and sends findings straight back, so they get fixed before Claude moves on.</p><code>ironmountain init --claude</code></div>
+      <div><h3>Any MCP client</h3><p>Cursor, Windsurf, VS Code, Codex CLI, Gemini CLI and Claude Desktop can check their own output.</p><code>ironmountain mcp</code></div>
+      <div><h3>Pull requests</h3><p>A GitHub Action or App posts a summary, inline comments, a required check and SARIF.</p><code>uses: airostudio/ironmountain</code></div>
+      <div><h3>Terminal and git hooks</h3><p>Review the working tree, a branch or staged changes. Exit code 1 means blocked.</p><code>ironmountain review --base main</code></div>
+    </div>
+  </section>
+
+  <section class="safety">
+    <div class="section-head">
+      <h2>The reviewer can't be talked out of a block</h2>
+      <p>The code under review is untrusted, and so is any model that reads it.</p>
+    </div>
+    <ul class="ticks">
+      <li>The Claude reviewer can add findings, but it can never dismiss critical, secret, supply-chain or AI-integrity findings.</li>
+      <li>Reviewed content is fenced as untrusted data, and the reviewer reports injected instructions instead of following them.</li>
+      <li>Agent tools are read-only and confined to the repository, with no symlink escapes and no <code>.git/</code> access.</li>
+      <li>Changes written by AI automatically get a stricter gate, and their suppressions need a written reason.</li>
+      <li>PR policy is read from the base branch, so a change can't loosen its own gate.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <span>Iron Mountain · MIT licensed</span>
+  <a href="https://github.com/airostudio/ironmountain">Source on GitHub</a>
+</footer>
+
+<script src="/examples.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
